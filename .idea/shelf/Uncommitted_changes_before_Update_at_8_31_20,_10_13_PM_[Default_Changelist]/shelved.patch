@@ -1,0 +1,209 @@
+Index: src/main/resources/application.properties
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>#Servers settings\nserver.error.include-message=always\n#server.port=0\n\n#Spring data settings\n\n\n#Customs settings\nexpdate.value=90\ndefault.role=user\n\n#JMX\nspring.jmx.enabled=true\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/resources/application.properties	(revision 4b3c4922148036dd7718621e31de8e56c66b93aa)
++++ src/main/resources/application.properties	(date 1598864776752)
+@@ -3,7 +3,7 @@
+ #server.port=0
+ 
+ #Spring data settings
+-
++spring.data.mongodb.uri=mongodb+srv://tpa204:soothe@cluster0.gazak.mongodb.net/forumdb?retryWrites=true&w=majority
+ 
+ #Customs settings
+ expdate.value=90
+Index: src/main/java/telran/ashkelon2020/accounting/controller/UserAccountController.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package telran.ashkelon2020.accounting.controller;\n\nimport org.springframework.beans.factory.annotation.Autowired;\nimport org.springframework.web.bind.annotation.DeleteMapping;\nimport org.springframework.web.bind.annotation.PathVariable;\nimport org.springframework.web.bind.annotation.PostMapping;\nimport org.springframework.web.bind.annotation.PutMapping;\nimport org.springframework.web.bind.annotation.RequestBody;\nimport org.springframework.web.bind.annotation.RequestHeader;\nimport org.springframework.web.bind.annotation.RequestMapping;\nimport org.springframework.web.bind.annotation.RestController;\n\nimport telran.ashkelon2020.accounting.dto.RolesResponseDto;\nimport telran.ashkelon2020.accounting.dto.UserAccountResponseDto;\nimport telran.ashkelon2020.accounting.dto.UserRegisterDto;\nimport telran.ashkelon2020.accounting.dto.UserUpdateDto;\nimport telran.ashkelon2020.accounting.service.UserAccountService;\nimport telran.ashkelon2020.accounting.service.security.AccountSecurity;\n\n@RestController\n@RequestMapping(\"/account\")\npublic class UserAccountController {\n\n\t@Autowired\n\tUserAccountService accountService;\n\t\n\t@Autowired\n\tAccountSecurity securityService;\n\n\t@PostMapping(\"/register\")\n\tpublic UserAccountResponseDto register(@RequestBody UserRegisterDto userRegisterDto) {\n\t\treturn accountService.addUser(userRegisterDto);\n\t}\n\n\t@PostMapping(\"/login\")\n\tpublic UserAccountResponseDto login(String user) {\n\t\treturn accountService.getUser(user);\n\t}\n\n\t@PutMapping(\"/user/{login}\")\n\tpublic UserAccountResponseDto updateUser(@PathVariable String login, @RequestBody UserUpdateDto userUpdateDto) {\n\t\treturn accountService.editUser(login, userUpdateDto);\n\t}\n\n\t@DeleteMapping(\"/user/{login}\")\n\tpublic UserAccountResponseDto removeUser(@PathVariable String login) {\n\t\treturn accountService.removeUser(login);\n\t}\n\n\t@PutMapping(\"/user/{login}/role/{role}\")\n\tpublic RolesResponseDto addRole(@PathVariable String login, @PathVariable String role) {\n\t\treturn accountService.changeRolesList(login, role, true);\n\t}\n\n\t@DeleteMapping(\"/user/{login}/role/{role}\")\n\tpublic RolesResponseDto removeRole(@PathVariable String login, @PathVariable String role) {\n\t\treturn accountService.changeRolesList(login, role, false);\n\t}\n\n\t@PutMapping(\"/user/password\")\n\tpublic void changePassword(@RequestHeader(\"X-Password\") String newPassword, String user) {\n\t\taccountService.changePassword(user, newPassword);\n\t}\n\n\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/telran/ashkelon2020/accounting/controller/UserAccountController.java	(revision 4b3c4922148036dd7718621e31de8e56c66b93aa)
++++ src/main/java/telran/ashkelon2020/accounting/controller/UserAccountController.java	(date 1598864776800)
+@@ -17,6 +17,8 @@
+ import telran.ashkelon2020.accounting.service.UserAccountService;
+ import telran.ashkelon2020.accounting.service.security.AccountSecurity;
+ 
++import java.security.Principal;
++
+ @RestController
+ @RequestMapping("/account")
+ public class UserAccountController {
+@@ -33,8 +35,9 @@
+ 	}
+ 
+ 	@PostMapping("/login")
+-	public UserAccountResponseDto login(String user) {
+-		return accountService.getUser(user);
++	public UserAccountResponseDto login(Principal principal) {
++
++		return accountService.getUser(principal.getName());
+ 	}
+ 
+ 	@PutMapping("/user/{login}")
+@@ -58,8 +61,8 @@
+ 	}
+ 
+ 	@PutMapping("/user/password")
+-	public void changePassword(@RequestHeader("X-Password") String newPassword, String user) {
+-		accountService.changePassword(user, newPassword);
++	public void changePassword(@RequestHeader("X-Password") String newPassword, Principal principal) {
++		accountService.changePassword(principal.getName(), newPassword);
+ 	}
+ 
+ 
+Index: src/main/java/telran/ashkelon2020/accounting/service/security/AccountSecurity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package telran.ashkelon2020.accounting.service.security;\n\npublic interface AccountSecurity {\n\t\n\tString getLogin(String token);\n\t\n\tboolean checkExpDate(String login);\n\t\n\tboolean checkHaveRole(String login, String role);\n\t\n\tboolean isBanned(String login);\n\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/telran/ashkelon2020/accounting/service/security/AccountSecurity.java	(revision 4b3c4922148036dd7718621e31de8e56c66b93aa)
++++ src/main/java/telran/ashkelon2020/accounting/service/security/AccountSecurity.java	(date 1598870933895)
+@@ -9,5 +9,8 @@
+ 	boolean checkHaveRole(String login, String role);
+ 	
+ 	boolean isBanned(String login);
++	String addUser (String sessionId, String login);
++	String getUser (String sessionId);
++	String removeUser(String sessionId);
+ 
+ }
+Index: src/main/java/telran/ashkelon2020/accounting/service/security/AccountSecurityImpl.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package telran.ashkelon2020.accounting.service.security;\n\nimport java.time.LocalDateTime;\nimport java.util.Base64;\n\nimport org.mindrot.jbcrypt.BCrypt;\nimport org.springframework.beans.factory.annotation.Autowired;\nimport org.springframework.stereotype.Service;\n\nimport telran.ashkelon2020.accounting.dao.UserAccountRepository;\nimport telran.ashkelon2020.accounting.dto.UserLoginDto;\nimport telran.ashkelon2020.accounting.dto.exceptions.ForbiddenException;\nimport telran.ashkelon2020.accounting.dto.exceptions.TokenValidateException;\nimport telran.ashkelon2020.accounting.dto.exceptions.UnauthorizedException;\nimport telran.ashkelon2020.accounting.dto.exceptions.UserNotFoundException;\nimport telran.ashkelon2020.accounting.model.UserAccount;\n\n@Service\npublic class AccountSecurityImpl implements AccountSecurity {\n\n\t@Autowired\n\tUserAccountRepository repository;\n\n\t@Override\n\tpublic String getLogin(String token) {\n\t\tUserLoginDto userLoginDto = tokenDecode(token);\n\t\tUserAccount userAccount = repository.findById(userLoginDto.getLogin())\n\t\t\t\t.orElseThrow(() -> new UserNotFoundException(userLoginDto.getLogin()));\n\t\tif (!BCrypt.checkpw(userLoginDto.getPassword(), userAccount.getPassword())) {\n\t\t\tthrow new UnauthorizedException();\n\t\t}\t\n\t\treturn userAccount.getLogin();\n\t}\n\n\t@Override\n\tpublic boolean checkExpDate(String login) {\n\t\tUserAccount userAccount = repository.findById(login)\n\t\t\t\t.orElseThrow(() -> new UserNotFoundException(login));\n\t\tif (userAccount.getExpDate().isBefore(LocalDateTime.now())) {\n\t\t\tthrow new ForbiddenException();\n\t\t}\n\t\treturn true;\n\t}\n\n\tprivate UserLoginDto tokenDecode(String token) {\n\t\ttry {\n\t\t\tString[] credentials = token.split(\" \");\n\t\t\tString credential = new String(Base64.getDecoder().decode(credentials[1]));\n\t\t\tcredentials = credential.split(\":\");\n\t\t\treturn new UserLoginDto(credentials[0], credentials[1]);\n\t\t} catch (Exception e) {\n\t\t\tthrow new TokenValidateException();\n\t\t}\n\t}\n\n\t@Override\n\tpublic boolean checkHaveRole(String login, String role) {\n\t\tUserAccount userAccount = repository.findById(login)\n\t\t\t\t.orElseThrow(() -> new UserNotFoundException(login));\n\t\treturn userAccount.getRoles().contains(role);\n\t}\n\t\n\t@Override\n\tpublic boolean isBanned(String login) {\n\t\tUserAccount userAccount = repository.findById(login)\n\t\t\t\t.orElseThrow(() -> new UserNotFoundException(login));\n\t\treturn userAccount.getRoles().isEmpty();\n\t}\n\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/telran/ashkelon2020/accounting/service/security/AccountSecurityImpl.java	(revision 4b3c4922148036dd7718621e31de8e56c66b93aa)
++++ src/main/java/telran/ashkelon2020/accounting/service/security/AccountSecurityImpl.java	(date 1598870933911)
+@@ -2,6 +2,8 @@
+ 
+ import java.time.LocalDateTime;
+ import java.util.Base64;
++import java.util.Map;
++import java.util.concurrent.ConcurrentHashMap;
+ 
+ import org.mindrot.jbcrypt.BCrypt;
+ import org.springframework.beans.factory.annotation.Autowired;
+@@ -17,7 +19,7 @@
+ 
+ @Service
+ public class AccountSecurityImpl implements AccountSecurity {
+-
++	Map<String,String> users = new ConcurrentHashMap<>();
+ 	@Autowired
+ 	UserAccountRepository repository;
+ 
+@@ -67,4 +69,19 @@
+ 		return userAccount.getRoles().isEmpty();
+ 	}
+ 
++	@Override
++	public String addUser(String sessionId, String login) {
++		return users.put(sessionId,login);
++	}
++
++	@Override
++	public String getUser(String sessionId) {
++		return users.get(sessionId);
++	}
++
++	@Override
++	public String removeUser(String sessionId) {
++		return users.remove(sessionId);
++	}
++
+ }
+Index: src/main/java/telran/ashkelon2020/accounting/service/filters/AuthenticationFilter.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package telran.ashkelon2020.accounting.service.filters;\n\nimport java.io.IOException;\n\nimport javax.servlet.Filter;\nimport javax.servlet.FilterChain;\nimport javax.servlet.ServletException;\nimport javax.servlet.ServletRequest;\nimport javax.servlet.ServletResponse;\nimport javax.servlet.http.HttpServletRequest;\nimport javax.servlet.http.HttpServletResponse;\n\nimport org.springframework.beans.factory.annotation.Autowired;\nimport org.springframework.stereotype.Service;\n\nimport telran.ashkelon2020.accounting.dto.exceptions.UnauthorizedException;\nimport telran.ashkelon2020.accounting.dto.exceptions.UserNotFoundException;\nimport telran.ashkelon2020.accounting.service.security.AccountSecurity;\n\n@Service\npublic class AuthenticationFilter implements Filter{\n\t\n\t@Autowired\n\tAccountSecurity securityService;\n\n\t@Override\n\tpublic void doFilter(ServletRequest req, ServletResponse resp, FilterChain chain)\n\t\t\tthrows IOException, ServletException {\n\t\tHttpServletRequest request = (HttpServletRequest) req;\n\t\tHttpServletResponse response = (HttpServletResponse) resp;\n\t\tString path = request.getServletPath();\n\t\tString method = request.getMethod();\n\t\tString token = request.getHeader(\"Authorization\");\n\t\tSystem.out.println(path);\n\t\tSystem.out.println(method);\n\t\tSystem.out.println(token);\n\t\tif (!\"/account/register\".equalsIgnoreCase(path)) {\n\t\t\ttry {\n\t\t\t\tString login = securityService.getLogin(token);\n\t\t\t} catch (UserNotFoundException e) {\n\t\t\t\tresponse.sendError(404, e.getMessage());\n\t\t\t\treturn;\n\t\t\t} catch (UnauthorizedException e) {\n\t\t\t\tresponse.sendError(401);\n\t\t\t\treturn;\n\t\t\t}catch (Exception e) {\n\t\t\t\tresponse.sendError(400);\n\t\t\t\treturn;\n\t\t\t}\n\t\t}\n\t\t\n\t\tchain.doFilter(request, response);\n\t}\n\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/telran/ashkelon2020/accounting/service/filters/AuthenticationFilter.java	(revision 4b3c4922148036dd7718621e31de8e56c66b93aa)
++++ src/main/java/telran/ashkelon2020/accounting/service/filters/AuthenticationFilter.java	(date 1598873087830)
+@@ -1,6 +1,7 @@
+ package telran.ashkelon2020.accounting.service.filters;
+ 
+ import java.io.IOException;
++import java.security.Principal;
+ 
+ import javax.servlet.Filter;
+ import javax.servlet.FilterChain;
+@@ -8,9 +9,11 @@
+ import javax.servlet.ServletRequest;
+ import javax.servlet.ServletResponse;
+ import javax.servlet.http.HttpServletRequest;
++import javax.servlet.http.HttpServletRequestWrapper;
+ import javax.servlet.http.HttpServletResponse;
+ 
+ import org.springframework.beans.factory.annotation.Autowired;
++import org.springframework.core.annotation.Order;
+ import org.springframework.stereotype.Service;
+ 
+ import telran.ashkelon2020.accounting.dto.exceptions.UnauthorizedException;
+@@ -18,6 +21,7 @@
+ import telran.ashkelon2020.accounting.service.security.AccountSecurity;
+ 
+ @Service
++@Order(10)
+ public class AuthenticationFilter implements Filter{
+ 	
+ 	@Autowired
+@@ -34,9 +38,24 @@
+ 		System.out.println(path);
+ 		System.out.println(method);
+ 		System.out.println(token);
++
+ 		if (!"/account/register".equalsIgnoreCase(path)) {
++			String sessionId = request.getSession().getId();
++			System.out.println(sessionId);
++			if(sessionId!=null&& token==null){
++				String login = securityService.getUser(sessionId);
++				if(login!=null){
++					request =new WrapperRequest(request,login);
++					chain.doFilter(request, response);
++					return;
++				}
++
++			}
+ 			try {
+ 				String login = securityService.getLogin(token);
++				request = new WrapperRequest(request,login);
++				securityService.addUser(sessionId,login);
++
+ 			} catch (UserNotFoundException e) {
+ 				response.sendError(404, e.getMessage());
+ 				return;
+@@ -51,5 +70,22 @@
+ 		
+ 		chain.doFilter(request, response);
+ 	}
++	private class WrapperRequest extends HttpServletRequestWrapper {
++		String user;
++
++		public WrapperRequest(HttpServletRequest request, String user) {
++			super(request);
++			this.user = user;
++		}
+ 
++		@Override
++		public Principal getUserPrincipal() {
++			return new Principal() {
++
++				@Override
++				public String getName() {
++					return user;
++				}};
++		}
++	}
+ }
